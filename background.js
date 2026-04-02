@@ -1,11 +1,19 @@
-// ВНИМАНИЕ: Замените ВАШ_НИК и ВАШ_РЕПОЗИТОРИЙ на реальные данные с GitHub!
-// Ссылка должна вести на raw-версию файла manifest.json
 const GITHUB_MANIFEST_URL = "https://raw.githubusercontent.com/MrMails/Pyrus_Routing_Optimizer/main/manifest.json";
 
-// Настраиваем проверку обновлений каждые 4 часа (240 минут)
+// 1. ФОКУС ВКЛАДОК
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "focusTab" && sender.tab) {
+        // Переключаем фокус на вкладку с Pyrus
+        chrome.tabs.update(sender.tab.id, { active: true });
+        // И делаем окно браузера активным (если было открыто в другом окне)
+        chrome.windows.update(sender.tab.windowId, { focused: true });
+    }
+});
+
+// 2. СИСТЕМА УВЕДОМЛЕНИЙ ОБ ОБНОВЛЕНИЯХ
 chrome.runtime.onInstalled.addListener(() => {
     chrome.alarms.create("checkUpdateAlarm", { periodInMinutes: 240 });
-    checkForUpdates(); // Проверяем сразу при запуске/обновлении
+    checkForUpdates(); // Проверяем сразу при запуске
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
@@ -16,7 +24,6 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 
 async function checkForUpdates() {
     try {
-        // Добавляем таймстамп (?t=...), чтобы браузер не брал старую версию из кэша
         let response = await fetch(GITHUB_MANIFEST_URL + "?t=" + Date.now());
         if (!response.ok) return;
         
@@ -26,17 +33,15 @@ async function checkForUpdates() {
         let remoteVersion = remoteManifest.version;
 
         if (isNewerVersion(localVersion, remoteVersion)) {
-            // Сохраняем в память информацию, что есть новая версия
             chrome.storage.local.set({ updateAvailable: remoteVersion });
         } else {
             chrome.storage.local.remove('updateAvailable');
         }
     } catch (e) {
-        console.log("Pyrus PRO Updater: Не удалось проверить обновления", e);
+        console.log("Pyrus Routing Optimizer: Не удалось проверить обновления", e);
     }
 }
 
-// Умное сравнение версий (например, 1.5.3 и 1.6.0)
 function isNewerVersion(oldVer, newVer) {
     const oldParts = oldVer.split('.').map(Number);
     const newParts = newVer.split('.').map(Number);

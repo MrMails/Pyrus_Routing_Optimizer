@@ -74,6 +74,7 @@ const proThemeCSS = `
     .dropdown-menu { display: none; position: absolute; top: 100%; right: 0; background: var(--bg-table); border: 1px solid var(--border); box-shadow: 0 4px 12px var(--shadow); border-radius: 4px; z-index: 200; min-width: 200px; overflow: hidden; margin-top: 4px; }
     .dropdown-menu.show { display: block; }
     .dropdown-item { padding: 10px 12px; cursor: pointer; color: var(--text-main); font-size: 12px; border-bottom: 1px solid var(--border); transition: 0.2s; }
+    .dropdown-item:last-child { border-bottom: none; }
     .dropdown-item:hover { background: var(--bg-header); }
 
     .stage-container { margin-bottom: 20px; position: relative; scroll-margin-top: 60px; }
@@ -127,7 +128,7 @@ const proThemeCSS = `
     .version-text { font-family: monospace; color: var(--text-header); }
 `;
 
-// 5. КОД ДЛЯ СКАЧАННОГО ФАЙЛА HTML (Работает без расширения)
+// 5. КОД ДЛЯ СКАЧАННОГО ФАЙЛА HTML
 const standaloneJSLogic = `
     function triggerHighlight(action, s, r, c) {
         if (window.opener && !window.opener.closed) {
@@ -205,8 +206,6 @@ const standaloneJSLogic = `
 let proRoutingWindow = null; 
 
 function attachProEvents(doc, formUrl, originalWin) {
-    
-    // АВТО-ЗАКРЫТИЕ Вкладки PRO, если закрыли оригинальный Pyrus
     let autoCloseTimer = doc.defaultView.setInterval(function() {
         if (!originalWin || originalWin.closed) {
             doc.defaultView.close();
@@ -550,7 +549,6 @@ setInterval(checkAndInjectButton, 1000);
 
 // --- СИСТЕМА УВЕДОМЛЕНИЙ ОБ ОБНОВЛЕНИИ ---
 function checkForUpdateBanner() {
-    // ВНИМАНИЕ: Замените ссылку на свою страницу Releases на GitHub
     const GITHUB_RELEASES_URL = "https://github.com/MrMails/Pyrus_Routing_Optimizer/releases";
     
     chrome.storage.local.get(['updateAvailable', 'updateDismissed'], function(result) {
@@ -570,7 +568,7 @@ function checkForUpdateBanner() {
             
             banner.innerHTML = `
                 <style>@keyframes slideDown { from { top: -50px; opacity: 0; } to { top: 15px; opacity: 1; } }</style>
-                <span>✨ Доступна новая версия Pyrus Routing PRO (v${result.updateAvailable})!</span>
+                <span>✨ Доступна новая версия Pyrus Routing Optimizer (v${result.updateAvailable})!</span>
                 <a href="${GITHUB_RELEASES_URL}" target="_blank" style="background: white; color: #0052cc; padding: 5px 12px; border-radius: 4px; text-decoration: none; transition: 0.2s;">Скачать</a>
                 <button id="pro-dismiss-update" style="background: none; border: none; color: white; cursor: pointer; font-size: 16px; padding: 0;">✕</button>
             `;
