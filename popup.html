@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; width: 320px; margin: 0; padding: 15px; background: #f4f5f7; color: #172b4d; }
+        h2 { margin: 0 0 15px 0; font-size: 16px; text-align: center; color: #0052cc; }
+        
+        /* Главные кнопки */
+        .btn { width: 100%; padding: 10px; margin-bottom: 8px; border: none; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-save { background: #0052cc; color: white; }
+        .btn-save:hover { background: #0043a6; }
+        .btn-secondary { background: #e9eff7; color: #0052cc; border: 1px solid #dfe1e6; }
+        .btn-secondary:hover { background: #dfe1e6; }
+
+        /* Контейнеры */
+        .controls-row { display: flex; gap: 8px; margin-bottom: 10px; }
+        .controls-row .btn { margin-bottom: 0; }
+        .filter-container { font-size: 12px; margin-bottom: 10px; display: flex; align-items: center; gap: 5px; color: #5e6c84; }
+        .list-title { font-size: 12px; font-weight: bold; margin: 15px 0 5px 0; color: #5e6c84; text-transform: uppercase; }
+        
+        /* Список бекапов */
+        #backup-list { max-height: 250px; overflow-y: auto; background: white; border: 1px solid #dfe1e6; border-radius: 6px; padding: 5px; font-size: 12px; }
+        #status { font-size: 12px; text-align: center; margin-top: 10px; font-weight: bold; color: #5e6c84; min-height: 15px; }
+
+        /* Стили для кнопок управления каждым бекапом (генерируются в JS) */
+        .btn-restore { background: #e3fcef; color: #006644; border: 1px solid #36b37e; border-radius: 4px; cursor: pointer; padding: 4px 8px; flex-grow: 1; font-weight: bold; transition: 0.2s;}
+        .btn-restore:hover { background: #abf5d1; }
+        .btn-rename, .btn-delete { background: #f4f5f7; border: 1px solid #dfe1e6; border-radius: 4px; cursor: pointer; padding: 4px 8px; transition: 0.2s; }
+        .btn-rename:hover { background: #fffae6; border-color: #ffc400; }
+        .btn-delete:hover { background: #ffebe6; border-color: #ff5630; }
+    </style>
+</head>
+<body>
+    <h2>PRO Контроль версий</h2>
+    
+    <button class="btn btn-save" id="btn-save">💾 Сохранить маршрутизацию</button>
+    
+    <div class="controls-row">
+        <button class="btn btn-secondary" id="btn-export">⬇️ Экспорт</button>
+        <button class="btn btn-secondary" id="btn-import">⬆️ Импорт</button>
+    </div>
+    
+    <input type="file" id="file-import" accept=".json" style="display: none;">
+
+    <div class="filter-container">
+        <input type="checkbox" id="checkbox-all-forms">
+        <label for="checkbox-all-forms" style="cursor: pointer;">Показывать бекапы других форм</label>
+    </div>
+    
+    <div class="list-title">Список сохранений:</div>
+    <div id="backup-list">
+        <div style="padding: 10px; text-align: center; color: #999;">Загрузка...</div>
+    </div>
+
+    <div id="status">Готово к работе</div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

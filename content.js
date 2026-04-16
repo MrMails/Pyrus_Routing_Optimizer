@@ -474,7 +474,7 @@ async function expandProRouting(event) {
                     <span class="author-name">by Mr. Mails</span>
                     <span class="author-for">for ITCS</span>
                 </a>
-                <div class="version-text">Pyrus Routing Optimizer v1.5.3</div>
+                <div class="version-text">Pyrus Routing Optimizer v2.0.0</div>
             </div>
         </body></html>`);
 
