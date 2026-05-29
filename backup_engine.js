@@ -1,18 +1,19 @@
 (() => {
-    if (window.pyrusProBackupEngineInitialized === "v19.0.0") return;
-    window.pyrusProBackupEngineInitialized = "v19.0.0";
+    if (window.pyrusProBackupEngineInitialized === "v2.1.0") return;
+    window.pyrusProBackupEngineInitialized = "v2.1.0";
 
     function getTimestamp() {
         const now = new Date();
         return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}.${now.getMilliseconds().toString().padStart(3, '0')}`;
     }
 
-    const debug = (msg, data = '') => console.log(`[${getTimestamp()}] 🐞 PRO v19: ${msg}`, data);
-    const debugErr = (msg, data = '') => console.error(`[${getTimestamp()}] ❌ PRO ERR v19: ${msg}`, data);
+    const debug = (msg, data = '') => console.log(`[${getTimestamp()}] 2026 🐞 PRO v2.1: ${msg}`, data);
+    const debugErr = (msg, data = '') => console.error(`[${getTimestamp()}] 2026 ❌ PRO ERR v2.1: ${msg}`, data);
 
     let missingUsersReport = new Set();
     const STORAGE_KEY = 'pyrus_pro_backups_v3';
 
+    // СИНХРОННЫЙ АКТИВНЫЙ ТАЙМЕР
     async function sleep(ms, context = "") {
         let ctxStr = context ? ` (${context})` : "";
         debug(`   -> [Таймер] Ждем ${ms}мс...${ctxStr}`);
@@ -44,13 +45,17 @@
     function gentleClick(element, elementName) {
         debug(`   -> [Клик] Нажимаем: ${elementName}`);
         forceBlur(); 
-        if (element && element.scrollIntoView) element.scrollIntoView({ behavior: 'instant', block: 'center' });
+        if (element && element.scrollIntoView) {
+            element.scrollIntoView({ behavior: 'instant', block: 'center' });
+        }
         if (element) element.click();
     }
 
     function directClick(element, elementName) {
         debug(`   -> [Снайпер-Клик] Точный клик: ${elementName}`);
-        if (element && element.scrollIntoView) element.scrollIntoView({ behavior: 'instant', block: 'center' });
+        if (element && element.scrollIntoView) {
+            element.scrollIntoView({ behavior: 'instant', block: 'center' });
+        }
         if (element) {
             element.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
             element.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
@@ -60,10 +65,12 @@
     }
 
     function simulateRealClick(element, elementName) {
-        debug(`   -> [Меню-Клик] Выбираем: ${elementName}`);
+        debug(`   -> [Menu-Click] Нажимаем пункт: ${elementName}`);
         forceBlur();
+        if (element && element.scrollIntoView) {
+            element.scrollIntoView({ behavior: 'instant', block: 'center' });
+        }
         if (!element) return;
-        if (element.scrollIntoView) element.scrollIntoView({ behavior: 'instant', block: 'center' });
         const eventOptions = { bubbles: true, cancelable: true, composed: true, view: window, buttons: 1 };
         ['pointerover', 'mouseenter', 'pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'].forEach(type => {
             let EventClass = type.startsWith('pointer') ? PointerEvent : MouseEvent;
@@ -100,11 +107,13 @@
                 let newCount = step.querySelectorAll('.weRule').length;
                 if ((isDeletion && newCount < currentCount) || (!isDeletion && newCount > currentCount)) {
                     debug(`   -> [Ожидание] Успех: стало ${newCount} правил.`);
-                    resolve(true); return;
+                    resolve(true);
+                    return;
                 }
                 if (performance.now() - start >= timeout) {
                     debug(`   -> [Ожидание] Таймаут! Правила не изменились.`);
-                    resolve(false); return;
+                    resolve(false);
+                    return;
                 }
                 window.requestAnimationFrame(check);
             }
@@ -113,7 +122,7 @@
     }
 
     async function handleConfirmModal() {
-        debug(`   -> [Поиск] Ищем окно подтверждения...`);
+        debug(`   -> [Поиск] Ищем окно подтверждения удаления...`);
         for (let i = 0; i < 4; i++) {
             await sleep(150, "Поиск модалки");
             let btns = Array.from(document.querySelectorAll('button'));
@@ -121,40 +130,45 @@
                 let txt = (b.innerText || "").toLowerCase().trim();
                 return (txt === 'удалить' || txt === 'да' || txt === 'подтвердить') && b.offsetParent !== null;
             });
+
             if (confirmBtn) {
-                gentleClick(confirmBtn, "Кнопка Подтверждения");
-                await sleep(500, "Ожидание закрытия"); 
+                gentleClick(confirmBtn, "Кнопка Подтверждения модалки");
+                await sleep(500, "Ждем закрытия модалки"); 
                 return true;
             }
         }
-        debug(`   -> [Поиск] Окно не появилось.`);
+        debug(`   -> [Поиск] Модалка не появилась.`);
         return false;
     }
 
     async function typeLikeHuman(sIdx, rIdx, cIdx, value) {
         let cell = getFreshCell(sIdx, rIdx, cIdx);
         if (!cell) return;
-        let element = cell.querySelector('textarea') || cell.querySelector('input[type="text"]');
-        if (!element) return;
-
-        debug(`   -> [Действие] Вводим текст "${value}"`);
         
-        gentleClick(element, "Активация текстового поля");
-        await sleep(100, "Ждем инициализацию поля в React");
+        let element = cell.querySelector('textarea') || cell.querySelector('input[type="text"]');
+        
+        // ФИКС: Если инпута нет, кликаем по статической ячейке, чтобы перевести ее в режим ввода
+        if (!element) {
+            gentleClick(cell, "Активация статической ячейки перед вводом");
+            await sleep(200, "Ожидание появления инпута");
+            cell = getFreshCell(sIdx, rIdx, cIdx);
+            if (!cell) return;
+            element = cell.querySelector('textarea') || cell.querySelector('input[type="text"]');
+        }
 
-        cell = getFreshCell(sIdx, rIdx, cIdx);
-        if (!cell) return;
-        element = cell.querySelector('textarea') || cell.querySelector('input[type="text"]');
-        if (!element) return;
+        if (!element) {
+            debugErr(`   -> [Ошибка] Не удалось активировать поле в ячейке [Этап: ${sIdx}, Правило: ${rIdx}, Ячейка: ${cIdx}]`);
+            return;
+        }
 
+        debug(`   -> [Действие] Вводим текст "${value}" в ячейку`);
+        if (element.scrollIntoView) element.scrollIntoView({ behavior: 'instant', block: 'center' });
         element.focus();
-        if(element.select) element.select();
         
         let nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
         let nativeTextAreaValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set;
         let setter = element.tagName === 'TEXTAREA' ? nativeTextAreaValueSetter : nativeInputValueSetter;
 
-        // Если нам нужно оставить ячейку ПУСТОЙ
         if (value === "") {
             debug(`   -> [Очистка] Стираем старое значение и жмем Escape`);
             dispatchKey(element, 'Backspace', 8);
@@ -163,10 +177,8 @@
             element.dispatchEvent(new Event('input', { bubbles: true }));
             await sleep(50, "Очистка поля");
             element.dispatchEvent(new Event('change', { bubbles: true }));
-            // ЖМЕМ ESCAPE вместо Enter, чтобы закрыть меню и ничего не выбрать!
             dispatchKey(element, 'Escape', 27); 
         } 
-        // Если нам нужно ввести ТЕКСТ
         else {
             dispatchKey(element, 'Backspace', 8);
             if (setter) setter.call(element, "");
@@ -200,24 +212,24 @@
     }
 
     async function addPersonLikeHuman(sIdx, rIdx, cIdx, userName) {
-        debug(`   -> [Действие] Добавляем элемент: "${userName}"`);
+        debug(`   -> [Действие] Начинаем добавление участника "${userName}"`);
         let cell = getFreshCell(sIdx, rIdx, cIdx);
         if (!cell) return;
         let input = cell.querySelector('.wePersonCell__input') || cell.querySelector('input[type="text"]');
         
         if (!input) {
-            gentleClick(cell, `Пустая ячейка`);
-            await sleep(200, "Ожидание активации");
+            gentleClick(cell, `Пустая ячейка участника`);
+            await sleep(200, "Ждем открытия ячейки");
             cell = getFreshCell(sIdx, rIdx, cIdx);
             if (!cell) return;
             dispatchKey(cell, 'Enter', 13);
-            await sleep(300, "Ожидание инпута"); 
+            await sleep(300, "Ждем появления инпута"); 
             cell = getFreshCell(sIdx, rIdx, cIdx);
             if (!cell) return;
             input = cell.querySelector('.wePersonCell__input') || cell.querySelector('input[type="text"]');
         }
         if (!input) { 
-            debugErr(`   -> [Ошибка] Инпут так и не появился!`);
+            debugErr(`   -> [Ошибка] Инпут для участника так и не появился!`);
             missingUsersReport.add(userName); 
             return; 
         }
@@ -231,7 +243,7 @@
             currentStr += char;
             nativeSetter.call(input, currentStr);
             input.dispatchEvent(new Event('input', { bubbles: true }));
-            await sleep(20, "Печать"); 
+            await sleep(20, "Печать символа"); 
         }
 
         input.dispatchEvent(new Event('change', { bubbles: true }));
@@ -303,8 +315,12 @@
 
                 steps.forEach((step, stepIndex) => {
                     let stepObj = { stepIndex: stepIndex, columns: [], rules: [] };
+                    
+                    // ФИКС: Чтение колонок с защитой от скрытых тултипов Pyrus
                     step.querySelectorAll('.weFieldCell .weFieldName__text').forEach(el => {
-                        let text = (el.innerText || el.textContent).trim();
+                        let cleanEl = el.cloneNode(true);
+                        cleanEl.querySelectorAll('[class*="tooltip"]').forEach(tip => tip.remove());
+                        let text = cleanEl.innerText.trim();
                         if (text) stepObj.columns.push(text);
                     });
 
@@ -314,12 +330,35 @@
                             let cellData = { cellIndex: i, isPerson: false, value: "", users: [] };
                             if (cell.classList.contains('wePersonCell')) {
                                 cellData.isPerson = true;
-                                cell.querySelectorAll('.token__text').forEach(t => cellData.users.push((t.innerText || t.textContent).trim()));
+                                cell.querySelectorAll('.token__text').forEach(t => {
+                                    let cleanT = t.cloneNode(true);
+                                    cleanT.querySelectorAll('[class*="tooltip"]').forEach(tip => tip.remove());
+                                    cellData.users.push(cleanT.innerText.trim());
+                                });
                             } else {
                                 let textarea = cell.querySelector('textarea');
                                 let input = cell.querySelector('input[type="text"]');
-                                if (textarea) cellData.value = textarea.value;
-                                else if (input) cellData.value = input.value;
+                                let viewTextObj = cell.querySelector('.weRuleCellField__viewText');
+                                
+                                // ФИКС: Считывание условий в бэкап как из инпутов, так и из статичных блоков
+                                if (textarea) {
+                                    cellData.value = textarea.value;
+                                } else if (input) {
+                                    cellData.value = input.value;
+                                } else if (viewTextObj) {
+                                    let lines = Array.from(viewTextObj.querySelectorAll('.weRuleCellField__viewLine'))
+                                                     .map(line => {
+                                                         let cleanLine = line.cloneNode(true);
+                                                         cleanLine.querySelectorAll('[class*="tooltip"]').forEach(tip => tip.remove());
+                                                         return cleanLine.innerText.trim();
+                                                     })
+                                                     .filter(Boolean);
+                                    cellData.value = lines.join('\n');
+                                } else {
+                                    let cleanCell = cell.cloneNode(true);
+                                    cleanCell.querySelectorAll('[class*="tooltip"]').forEach(tip => tip.remove());
+                                    cellData.value = cleanCell.innerText.trim();
+                                }
                             }
                             ruleObj.cells.push(cellData);
                         });
@@ -387,7 +426,15 @@
                             let needsChange = false;
 
                             for (let i = 0; i < Math.max(actualCols.length, savedCols.length); i++) {
-                                let actualName = actualCols[i] ? actualCols[i].querySelector('.weFieldName__text').innerText.trim() : null;
+                                let actualName = null;
+                                if (actualCols[i]) {
+                                    let node = actualCols[i].querySelector('.weFieldName__text');
+                                    if (node) {
+                                        let cleanNode = node.cloneNode(true);
+                                        cleanNode.querySelectorAll('[class*="tooltip"]').forEach(tip => tip.remove());
+                                        actualName = cleanNode.innerText.trim();
+                                    }
+                                }
                                 let savedName = savedCols[i];
 
                                 if (actualName && actualName !== savedName) {
@@ -439,8 +486,6 @@
                         }
 
                         debug(`\n--- ФАЗА 2: ПРОВЕРКА ПРАВИЛ И ЯЧЕЕК ---`);
-                        let tSurgery = performance.now();
-                        domStep = document.querySelectorAll('.weWorkflowStep')[sIdx];
                         let rulesNodeList = domStep.querySelectorAll('.weRule');
                         let currentRulesArray = Array.from(rulesNodeList);
                         let targetRuleCount = savedStep.rules.length;
@@ -454,7 +499,7 @@
                                 if(!ruleToDelete) continue;
                                 let trashSvg = ruleToDelete.querySelector('use[*|href="#commonIcons--trashThin"]');
                                 if (trashSvg) {
-                                    let trashBtn = trashSvg.closest('button') || trashSvg.closest('.IconButton') || trashSvg.parentNode;
+                                    let trashBtn = trashSvg.closest('button') || trashSvg.closest('.IconButton'] || trashSvg.parentNode;
                                     let currentCount = document.querySelectorAll('.weWorkflowStep')[sIdx].querySelectorAll('.weRule').length;
                                     gentleClick(trashBtn, `Корзина правила ${rIdx}`);
                                     await handleConfirmModal();
@@ -494,7 +539,10 @@
                                     let tokenEls = Array.from(cell.querySelectorAll('.token'));
                                     let currentTokensText = tokenEls.map(t => {
                                         let textEl = t.querySelector('.token__text');
-                                        return textEl ? (textEl.innerText || textEl.textContent).trim() : "";
+                                        if (!textEl) return "";
+                                        let cleanT = textEl.cloneNode(true);
+                                        cleanT.querySelectorAll('[class*="tooltip"]').forEach(tip => tip.remove());
+                                        return cleanT.innerText.trim();
                                     }).filter(Boolean);
                                     
                                     let isIdentical = savedCell.users.length === currentTokensText.length && savedCell.users.every(u => currentTokensText.includes(u));
@@ -508,25 +556,31 @@
                                             cell = getFreshCell(sIdx, rIdx, cIdx);
                                             if (!cell) continue;
                                             
-                                            let t = Array.from(cell.querySelectorAll('.token')).find(el => (el.querySelector('.token__text')?.innerText || "").trim() === text);
+                                            let t = Array.from(cell.querySelectorAll('.token')).find(el => {
+                                                let txtNode = el.querySelector('.token__text');
+                                                if (!txtNode) return false;
+                                                let cleanTxt = txtNode.cloneNode(true);
+                                                cleanTxt.querySelectorAll('[class*="tooltip"]').forEach(tip => tip.remove());
+                                                return cleanTxt.innerText.trim() === text;
+                                            });
                                             if (t) {
                                                 directClick(t, `Плашка токена "${text}"`);
                                                 await sleep(300, "Ждем отрисовки крестика"); 
                                                 
                                                 cell = getFreshCell(sIdx, rIdx, cIdx); 
                                                 if (!cell) continue;
-                                                t = Array.from(cell.querySelectorAll('.token')).find(el => (el.querySelector('.token__text')?.innerText || "").trim() === text);
+                                                t = Array.from(cell.querySelectorAll('.token')).find(el => {
+                                                    let txtNode = el.querySelector('.token__text');
+                                                    if (!txtNode) return false;
+                                                    let cleanTxt = txtNode.cloneNode(true);
+                                                    cleanTxt.querySelectorAll('[class*="tooltip"]').forEach(tip => tip.remove());
+                                                    return cleanTxt.innerText.trim() === text;
+                                                });
                                                 
                                                 if (t) {
                                                     let crossBtn = t.querySelector('.token__cross') || t.querySelector('button[aria-label^="Удалить"]');
-                                                    if (crossBtn) {
-                                                        directClick(crossBtn, `Крестик удаления`);
-                                                    } else {
-                                                        debug(`      -> Крестика нет, жмем Backspace.`);
-                                                        if (t.focus) t.focus();
-                                                        dispatchKey(t, 'Backspace', 8); 
-                                                        dispatchKey(document.activeElement, 'Backspace', 8); 
-                                                    }
+                                                    if (crossBtn) gentleClick(crossBtn, `Крестик удаления`);
+                                                    else dispatchKey(t, 'Backspace', 8); 
                                                     forceBlur(); 
                                                     await sleep(500, "Ожидание после удаления"); 
                                                 }
@@ -536,7 +590,11 @@
                                     
                                     cell = getFreshCell(sIdx, rIdx, cIdx);
                                     if (!cell) continue;
-                                    let newTokensText = Array.from(cell.querySelectorAll('.token__text')).map(t => t.innerText.trim());
+                                    let newTokensText = Array.from(cell.querySelectorAll('.token__text')).map(t => {
+                                        let cleanT = t.cloneNode(true);
+                                        cleanT.querySelectorAll('[class*="tooltip"]').forEach(tip => tip.remove());
+                                        return cleanT.innerText.trim();
+                                    });
                                     let usersToAdd = savedCell.users.filter(u => !newTokensText.includes(u));
                                     
                                     for (let userName of usersToAdd) {
@@ -546,8 +604,28 @@
                                     
                                 } else {
                                     let targetEl = cell.querySelector('textarea') || cell.querySelector('input[type="text"]');
-                                    let val = targetEl ? targetEl.value : "";
-                                    if (targetEl && val !== savedCell.value) {
+                                    let val = "";
+                                    let viewTextObj = cell.querySelector('.weRuleCellField__viewText');
+                                    
+                                    // ФИКС: Сравнение значений при накатывании бэкапа учитывает статичный рендер ячеек
+                                    if (targetEl) {
+                                        val = targetEl.value;
+                                    } else if (viewTextObj) {
+                                        let lines = Array.from(viewTextObj.querySelectorAll('.weRuleCellField__viewLine'))
+                                                         .map(line => {
+                                                             let cleanLine = line.cloneNode(true);
+                                                             cleanLine.querySelectorAll('[class*="tooltip"]').forEach(tip => tip.remove());
+                                                             return cleanLine.innerText.trim();
+                                                         })
+                                                         .filter(Boolean);
+                                        val = lines.join('\n');
+                                    } else {
+                                        let cleanCell = cell.cloneNode(true);
+                                        cleanCell.querySelectorAll('[class*="tooltip"]').forEach(tip => tip.remove());
+                                        val = cleanCell.innerText.trim();
+                                    }
+
+                                    if (val !== savedCell.value) {
                                         debug(`      [!] Ячейка ${cIdx} (Текст). Меняем "${val}" на "${savedCell.value}"`);
                                         await typeLikeHuman(sIdx, rIdx, cIdx, savedCell.value);
                                     }

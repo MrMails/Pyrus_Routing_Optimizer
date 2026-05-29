@@ -230,7 +230,7 @@ function attachProEvents(doc, formUrl, originalWin) {
         
         if (e.target.closest('#pro-theme-btn')) { let h = doc.documentElement; if (h.getAttribute('data-theme') === 'dark') { h.removeAttribute('data-theme'); originalWin.localStorage.setItem('pyrus_pro_theme', 'light'); } else { h.setAttribute('data-theme', 'dark'); originalWin.localStorage.setItem('pyrus_pro_theme', 'dark'); } }
         else if (e.target.closest('#pro-collapse-all-btn')) {
-            let btn = e.target.closest('#pro-collapse-all-btn'); let isCol = btn.dataset.collapsed === 'true';
+            let btn = doc.getElementById('pro-collapse-all-btn'); let isCol = btn.dataset.collapsed === 'true';
             doc.querySelectorAll('.stage-container').forEach(c => { if(isCol) { c.classList.remove('collapsed'); c.querySelector('.collapse-btn').innerText = '▼'; } else { c.classList.add('collapsed'); c.querySelector('.collapse-btn').innerText = '▶'; } });
             btn.dataset.collapsed = !isCol; btn.innerText = !isCol ? '▶ Развернуть всё' : '🔽 Свернуть всё';
         }
@@ -372,7 +372,12 @@ async function expandProRouting(event) {
             if (headerRow) {
                 Array.from(headerRow.children).forEach(cell => {
                     let textEl = cell.querySelector('.weFieldName__text');
-                    if (textEl && !cell.classList.contains('wePersonCell')) stepHeaders.push(textEl.textContent.replace(/\n/g, '').trim());
+                    if (textEl && !cell.classList.contains('wePersonCell')) {
+                        // ТОЧЕЧНЫЙ ФИКС: Очищаем заголовки от динамических скрытых тултипов Pyrus
+                        let cleanTextEl = textEl.cloneNode(true);
+                        cleanTextEl.querySelectorAll('[class*="tooltip"]').forEach(tip => tip.remove());
+                        stepHeaders.push(cleanTextEl.textContent.replace(/\n/g, '').trim());
+                    }
                     else if (cell.classList.contains('wePersonCell')) stepHeaders.push("PERSON_CELL");
                     else stepHeaders.push("");
                 });
@@ -411,20 +416,37 @@ async function expandProRouting(event) {
                                 let tokens = cell.getElementsByClassName('token__text');
                                 for(let t=0; t<tokens.length; t++) { 
                                     if(tokens[t]) {
-                                        let uName = tokens[t].textContent.trim(); 
+                                        let cleanToken = tokens[t].cloneNode(true);
+                                        cleanToken.querySelectorAll('[class*="tooltip"]').forEach(tip => tip.remove());
+                                        let uName = cleanToken.textContent.trim(); 
                                         stageUsers.add(uName); ruleUsersClean.push(uName); personsHTML.push(`<span class="user-badge">${uName}</span>`); 
                                     }
                                 }
                             } else if (headerName !== "PERSON_CELL") {
                                 let val = "";
                                 let textAreas = cell.getElementsByTagName('textarea');
+                                let textInputs = cell.getElementsByTagName('input');
+                                let viewTextObj = cell.querySelector('.weRuleCellField__viewText');
+                                
+                                // ТОЧЕЧНЫЙ ФИКС: Адаптация под статическое представление ячеек
                                 if (textAreas.length > 0 && textAreas[0] && textAreas[0].value) {
                                     val = textAreas[0].value.trim().replace(/\n/g, ', '); 
+                                } else if (textInputs.length > 0 && textInputs[0] && textInputs[0].type === 'text' && textInputs[0].value) {
+                                    val = textInputs[0].value.trim();
+                                } else if (viewTextObj) {
+                                    // Читаем строки из нового статического контейнера
+                                    let lines = Array.from(viewTextObj.querySelectorAll('.weRuleCellField__viewLine'))
+                                                     .map(line => {
+                                                         let cleanLine = line.cloneNode(true);
+                                                         cleanLine.querySelectorAll('[class*="tooltip"]').forEach(tip => tip.remove());
+                                                         return cleanLine.innerText.trim();
+                                                     })
+                                                     .filter(Boolean);
+                                    val = lines.join(', ');
                                 } else {
-                                    let textInputs = cell.getElementsByTagName('input');
-                                    if (textInputs.length > 0 && textInputs[0] && textInputs[0].type === 'text' && textInputs[0].value) {
-                                        val = textInputs[0].value.trim();
-                                    }
+                                    let cleanCell = cell.cloneNode(true);
+                                    cleanCell.querySelectorAll('[class*="tooltip"]').forEach(tip => tip.remove());
+                                    val = cleanCell.innerText.trim().replace(/\n/g, ', ');
                                 }
                                 
                                 if (val) { 
@@ -442,8 +464,8 @@ async function expandProRouting(event) {
             }
 
             let navHtml = `<div class="stage-nav">`;
-            navHtml += `<button class="stage-nav-btn" ${stepIndex > 0 ? `data-target="${stepIndex - 1}" title="Предыдущий этап"` : 'disabled'}>↑</button>`;
-            navHtml += `<button class="stage-nav-btn" ${stepIndex < steps.length - 1 ? `data-target="${stepIndex + 1}" title="Следующий этап"` : 'disabled'}>↓</button>`;
+            navHtml += `<button class="stage-nav-btn" ${stepIndex > 0 ? `data-target="${stepIndex - 1}" title="Previous Stage"` : 'disabled'}>↑</button>`;
+            navHtml += `<button class="stage-nav-btn" ${stepIndex < steps.length - 1 ? `data-target="${stepIndex + 1}" title="Next Stage"` : 'disabled'}>↓</button>`;
             navHtml += `</div>`;
 
             let searchInputHTML = `<input type="text" class="filter-search" placeholder="Поиск...">`;
@@ -474,7 +496,7 @@ async function expandProRouting(event) {
                     <span class="author-name">by Mr. Mails</span>
                     <span class="author-for">for ITCS</span>
                 </a>
-                <div class="version-text">Pyrus Routing Optimizer v2.0.0</div>
+                <div class="version-text">Pyrus Routing Optimizer v2.1.0</div>
             </div>
         </body></html>`);
 
